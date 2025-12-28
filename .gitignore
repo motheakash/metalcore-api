@@ -45,3 +45,6 @@ logs/
 # Temporary files
 tmp/
 temp/
+
+# Accidental version files
+v[0-9]*.[0-9]*.[0-9]*
