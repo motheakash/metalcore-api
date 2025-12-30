@@ -15,6 +15,7 @@ func RegisterRoutes(rg *gin.RouterGroup, db *pgxpool.Pool) {
 	userGroup := rg.Group("/users")
 	{
 		userGroup.GET("/:id", handler.GetByID)
+		userGroup.GET("/", handler.GetAll)
 		// Add more routes here as needed:
 		// userGroup.POST("", handler.Create)
 		// userGroup.PUT("/:id", handler.Update)

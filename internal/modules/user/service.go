@@ -31,3 +31,14 @@ func (s *Service) GetByID(ctx context.Context, userID int) (*User, error) {
 	// business rules can grow here
 	return user, nil
 }
+
+func (s *Service) GetAll(ctx context.Context) ([]User, error) {
+	users, err := s.repo.GetAll(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Additional business logic can be added here
+	// For example: filtering, sorting, enrichment, etc.
+	return users, nil
+}

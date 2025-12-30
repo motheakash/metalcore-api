@@ -44,6 +44,21 @@ func (h *Handler) GetByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data": user,
+		"data": ToUserResponse(user),
+	})
+}
+
+func (h *Handler) GetAll(c *gin.Context) {
+	users, err := h.service.GetAll(c.Request.Context())
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Internal server error",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": ToUserListResponse(users),
 	})
 }
