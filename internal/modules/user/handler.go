@@ -1,6 +1,7 @@
 package user
 
 import (
+	"metalcore-api/internal/common"
 	"net/http"
 	"strconv"
 
@@ -49,7 +50,17 @@ func (h *Handler) GetByID(c *gin.Context) {
 }
 
 func (h *Handler) GetAll(c *gin.Context) {
-	users, err := h.service.GetAll(c.Request.Context())
+	var pagination common.PaginationRequest
+	if err := c.ShouldBindQuery(&pagination); err != nil {
+		c.JSON(http.StatusBadRequest, common.ErrorResponse{
+			Error:   "Invalid pagination parameters",
+			Message: err.Error(),
+		})
+		return
+	}
+	page := pagination.GetPage()
+	page_size := pagination.GetPageSize()
+	users, total, err := h.service.GetAll(c.Request.Context(), page, page_size)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -58,7 +69,12 @@ func (h *Handler) GetAll(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": ToUserListResponse(users),
+	user_response := ToUserListResponse(users)
+
+	pagination_meta := common.NewPaginationMetadata(&pagination, total)
+
+	c.JSON(http.StatusOK, common.PaginatedResponse{
+		Data:       user_response,
+		Pagination: pagination_meta,
 	})
 }

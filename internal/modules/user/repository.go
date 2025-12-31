@@ -66,7 +66,23 @@ func (r *UserRepository) GetByID(ctx context.Context, userID int) (*User, error)
 	return &user, nil
 }
 
-func (r *UserRepository) GetAll(ctx context.Context) ([]User, error) {
+func (r *UserRepository) GetAll(ctx context.Context, offset, limit int) ([]User, int64, error) {
+	// Get total count
+	var totalCount int64
+	countQuery := `
+		SELECT COUNT(*)
+		FROM public."User"
+		WHERE "DeletedAt" IS NULL
+		  AND "Active" = True
+	`
+
+	err := r.db.QueryRow(ctx, countQuery).Scan(&totalCount)
+	if err != nil {
+		log.Printf("Database error in GetAllRepo (count): %v", err)
+		return nil, 0, err
+	}
+
+	// Get paginated data
 	query := `
 		SELECT
 			"UserId",
@@ -84,12 +100,13 @@ func (r *UserRepository) GetAll(ctx context.Context) ([]User, error) {
 		WHERE "DeletedAt" IS NULL
 		  AND "Active" = True
 		ORDER BY "CreatedAt" DESC
+		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := r.db.Query(ctx, query)
+	rows, err := r.db.Query(ctx, query, limit, offset)
 	if err != nil {
 		log.Printf("Database error in GetAll: %v", err)
-		return nil, err
+		return nil, 0, err
 	}
 
 	defer rows.Close()
@@ -114,15 +131,15 @@ func (r *UserRepository) GetAll(ctx context.Context) ([]User, error) {
 		)
 		if err != nil {
 			log.Printf("Error scanning user row: %v", err)
-			return nil, err
+			return nil, 0, err
 		}
 		users = append(users, user)
 	}
 
 	if err = rows.Err(); err != nil {
 		log.Printf("Error iterating rows: %v", err)
-		return nil, err
+		return nil, 0, err
 	}
-	return users, nil
 
+	return users, totalCount, nil
 }

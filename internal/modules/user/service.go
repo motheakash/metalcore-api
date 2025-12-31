@@ -32,13 +32,13 @@ func (s *Service) GetByID(ctx context.Context, userID int) (*User, error) {
 	return user, nil
 }
 
-func (s *Service) GetAll(ctx context.Context) ([]User, error) {
-	users, err := s.repo.GetAll(ctx)
+func (s *Service) GetAll(ctx context.Context, page, page_size int) ([]User, int64, error) {
+	users, total_count, err := s.repo.GetAll(ctx, page, page_size)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	// Additional business logic can be added here
 	// For example: filtering, sorting, enrichment, etc.
-	return users, nil
+	return users, total_count, nil
 }
