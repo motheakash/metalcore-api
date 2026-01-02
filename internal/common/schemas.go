@@ -70,6 +70,7 @@ type PaginatedResponse struct {
 
 // ErrorResponse represents a standard error response
 type ErrorResponse struct {
+	Status  int               `json:"status"`
 	Error   string            `json:"error"`
 	Message string            `json:"message,omitempty"`
 	Details map[string]string `json:"details,omitempty"`

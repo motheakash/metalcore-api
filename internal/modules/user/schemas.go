@@ -22,7 +22,7 @@ type CreateUserRequest struct {
 	FirstName *string `json:"first_name" binding:"omitempty,max=100"`
 	LastName  *string `json:"last_name" binding:"omitempty,max=100"`
 	Email     string  `json:"email" binding:"required,email"`
-	Phone     *string `json:"phone" binding:"omitempty"`
+	Phone     *string `json:"phone" binding:"required,min=10,max=13"`
 	Password  string  `json:"password" binding:"required,min=8"`
 }
 

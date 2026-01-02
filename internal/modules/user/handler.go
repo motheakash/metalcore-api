@@ -53,6 +53,7 @@ func (h *Handler) GetAll(c *gin.Context) {
 	var pagination common.PaginationRequest
 	if err := c.ShouldBindQuery(&pagination); err != nil {
 		c.JSON(http.StatusBadRequest, common.ErrorResponse{
+			Status:  http.StatusBadRequest,
 			Error:   "Invalid pagination parameters",
 			Message: err.Error(),
 		})
@@ -77,4 +78,43 @@ func (h *Handler) GetAll(c *gin.Context) {
 		Data:       user_response,
 		Pagination: pagination_meta,
 	})
+}
+
+func (h *Handler) Create(c *gin.Context) {
+	var payload CreateUserRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		validationErrors := common.FormatValidationErrors(err)
+		c.JSON(http.StatusBadRequest, common.ErrorResponse{
+			Status:  http.StatusBadRequest,
+			Error:   "Validation failed",
+			Message: "Please check the input fields",
+			Details: validationErrors,
+		})
+		return
+	}
+
+	response, err := h.service.Create(c, payload)
+	if err != nil {
+		switch err {
+		case ErrUsernameExists:
+			c.JSON(http.StatusConflict, common.ErrorResponse{
+				Status:  http.StatusConflict,
+				Error:   "Username already exists",
+				Message: "Please choose a different username",
+			})
+		default:
+			c.JSON(http.StatusInternalServerError, common.ErrorResponse{
+				Status:  http.StatusInternalServerError,
+				Error:   "Internal server error",
+				Message: "An unexpected error occurred",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "user has been created successfully.",
+		"data":    response,
+	})
+
 }

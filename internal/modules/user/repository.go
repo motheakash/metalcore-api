@@ -66,6 +66,65 @@ func (r *UserRepository) GetByID(ctx context.Context, userID int) (*User, error)
 	return &user, nil
 }
 
+func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*User, error) {
+	query := `
+		SELECT
+			"UserId",
+			"Username",
+			"Firstname",
+			"Lastname",
+			"Email",
+			"Phone",
+			"Active",
+			"CreatedAt",
+			"UpdatedAt"
+		FROM public."User"
+		WHERE "Username" = $1
+		  AND "DeletedAt" IS NULL
+		  AND "Active" = True
+	`
+	var user User
+
+	err := r.db.QueryRow(ctx, query, username).Scan(
+		&user.UserID,
+		&user.Username,
+		&user.FirstName,
+		&user.LastName,
+		&user.Email,
+		&user.Phone,
+		&user.Active,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		log.Println("error while fetching user with username", err)
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+// UsernameExists checks if a username exists regardless of active status or deletion
+func (r *UserRepository) UsernameExists(ctx context.Context, username string) (bool, error) {
+	query := `
+		SELECT EXISTS(
+			SELECT 1
+			FROM public."User"
+			WHERE "Username" = $1
+		)
+	`
+	var exists bool
+
+	err := r.db.QueryRow(ctx, query, username).Scan(&exists)
+	if err != nil {
+		log.Println("error while checking username existence:", err)
+		return false, err
+	}
+
+	return exists, nil
+}
+
 func (r *UserRepository) GetAll(ctx context.Context, offset, limit int) ([]User, int64, error) {
 	// Get total count
 	var totalCount int64
@@ -142,4 +201,47 @@ func (r *UserRepository) GetAll(ctx context.Context, offset, limit int) ([]User,
 	}
 
 	return users, totalCount, nil
+}
+
+func (r *UserRepository) Create(ctx context.Context, user *User) (*User, error) {
+
+	query := `
+		INSERT INTO public."User" (
+			"Username",
+			"Firstname",
+			"Lastname",
+			"Email",
+			"Phone",
+			"Password",
+			"Active"
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING
+			"UserId",
+			"CreatedAt",
+			"UpdatedAt"
+	`
+
+	err := r.db.QueryRow(
+		ctx,
+		query,
+		user.Username,
+		user.FirstName,
+		user.LastName,
+		user.Email,
+		user.Phone,
+		user.Password,
+		user.Active,
+	).Scan(
+		&user.UserID,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		log.Println("error while creating user:", err)
+		return nil, err
+	}
+
+	return user, nil
 }
